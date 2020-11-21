@@ -6,7 +6,16 @@ Alfred Workflow for search and open markdown files
 
 Coming Soon...
 
-----
+
+## Params
+
+* `MARKDOWN_PATH`
+
+
+## How to use
+
+Keyword: `mds`
+
 
 ## Thanks
 
