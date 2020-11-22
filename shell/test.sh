@@ -8,7 +8,7 @@ if [ -z "${MARKDOWN_PATH}" ];then
    exit 1
 fi
 
-# echo "${MARKDOWN_PATH}"
+# echo "11--${MARKDOWN_PATH}"
 
 
 declare -a header_arr # 标题数组
@@ -54,7 +54,7 @@ unset IFS
 final_expr="{${final_expr}}"
 #final_expr="{${final_expr}} | xargs -I'{}' stat -f'%m %N' '{}' | sort -rn | cut -d' ' -f 2-"  # | xargs -I'{}' grep -l tomcat '{}"
 
-# echo "${final_expr}"
+# echo "57--${final_expr}"
 # echo "header_arr:${header_arr} -- keyword_arr:${keyword_arr} -- next_input:${next_input} -- last_input:${last_input} -- end_char:${end_char}"
 
 
@@ -70,8 +70,7 @@ if [ ${#header_arr[@]} -gt 0 ];then
     final_expr="${final_expr} | egrep '^.+\.md\:[1-9]\:' | awk -F':' '{print \$1}'"
 fi
 
-# echo "${final_expr}"
-# ➜ { find "/demo" -type f -iname '*.md';} | xargs -I'{}' grep -inHe 'aaa' '{}' | egrep '^.+\.md\:[1-9]\:' | awk -F':' '{print $1}'
+# echo "73--${final_expr}"
 
 
 # 如果有输入关键字，则用关键字筛选文档，并且按照文档标题匹配度排序
@@ -103,24 +102,28 @@ fi
 
 final_expr="${final_expr} | head -20" # 取前20个
 
+# echo "106--${final_expr}"
 
-# echo "104--${final_expr}"
-
-
-echo "{\"items\":["
+result="{\"items\":["
 n=0
+r=0
 while read line
 do
 #    echo line=${line}
 
-    # 将文件中的前两行作为结果列表中的标题显示
-    # h="$(head -2 "${line}"| sed 's/-//g;s/\\/\\\\/g;s/"/\\"/g;s/[[:space:]]*$//g')"
     # 将文件名作为结果列表中的标题显示
     h="${line##*/}"
-    echo "{\"type\": \"file\",\"title\": \"${h}\",\"subtitle\": \"${line}\",\"arg\": \"${line}\"},"
+    result+="{\"type\": \"file\",\"title\": \"${h}\",\"subtitle\": \"${line}\",\"arg\": \"${line}\"},"
     n=$((n+1))
 done < <(eval "${final_expr}")
 if [ ${n} -eq 0 ]; then
-    echo "{\"title\": \"没有找到符合条件的文档\"}"
+    result+="{\"title\": \"没有找到符合条件的文档\"}"
 fi
-echo "]}"
+
+# Remove the json str last comma
+if [ ${r} -eq 0 ]; then
+    result=${result%,}
+fi
+
+result+="]}"
+echo ${result}
