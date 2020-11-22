@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
-MARKDOWN_PATH="${HOME}/demo/mnk"
-# NOTE: 
 # debug mode true or false
-debug=true
+debug=false
+
+if [ "$debug" = true ]; then
+    MARKDOWN_PATH="${HOME}/demo/mnk"
+fi
 
 if [ -z "${MARKDOWN_PATH}" ];then
    echo "{ \"items\":[{\"type\": \"error\",\"title\": \"请先设置文档路径 MARKDOWN_PATH \"}]}"
@@ -51,7 +53,7 @@ get_params $*
 final_expr=""
 IFS=":";for i in ${MARKDOWN_PATH}
 do
-    final_expr="${final_expr} find \"${i}\" -type f -iname '*.md';"
+    final_expr="${final_expr} find \"${i}\" -type f -iname '*.md' -print0;"
 done
 unset IFS
 final_expr="{${final_expr}}"
@@ -62,6 +64,8 @@ if [ "$debug" = true ]; then
     echo "header_arr:[${header_arr}] -- keyword_arr:[${keyword_arr}] -- next_input:[${next_input}] -- last_input:[${last_input}] -- end_char:[${end_char}]"
 fi
 
+# 按时间排序
+final_expr="${final_expr} | xargs -0 ls -t"
 
 # 如果有输入-h参数，过滤文档标题
 # 思路: grep -n 会输出行号，找到符合所有关键字的行，筛选行号=1的文档就可以了
@@ -92,7 +96,7 @@ if [ ${#keyword_arr[@]} -gt 0 ];then
 
     # 按时间排序
     # final_expr="${final_expr} | xargs -I'{}' stat -f'%m %N' '{}' | sort -rn | cut -d' ' -f 2- "
-    final_expr="${final_expr} | xargs -I'{}' ls -t '{}'"
+    # final_expr="${final_expr} | xargs -I'{}' ls -t '{}'"
 
     # 排序表达式: 统计第一行匹配关键字个数，将匹配个数大的放在前面
     # 第一步: 输入"文件名",输出"文件名 匹配个数"
@@ -109,7 +113,7 @@ if [ ${#keyword_arr[@]} -gt 0 ];then
 else
     # 按时间排序
     # final_expr="${final_expr} | xargs -I'{}' stat -f'%m %N' '{}' | sort -rn | cut -d' ' -f 2- "
-    final_expr="${final_expr} | xargs -I'{}' ls -t '{}'"
+    # final_expr="${final_expr} | xargs -0 ls -t"
 
     if [ "$debug" = true ]; then
         echo "114--${final_expr}"
