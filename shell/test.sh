@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 
-# MARKDOWN_PATH="${HOME}/demo"
-# NOTE: 
+# debug mode true or false
+debug=false
+
+if [ "$debug" = true ]; then
+    MARKDOWN_PATH="${HOME}/demo/mnk"
+fi
 
 if [ -z "${MARKDOWN_PATH}" ];then
    echo "{ \"items\":[{\"type\": \"error\",\"title\": \"请先设置文档路径 MARKDOWN_PATH \"}]}"
    exit 1
 fi
 
-# echo "${MARKDOWN_PATH}"
-
+if [ "$debug" = true ]; then
+    echo "13--${MARKDOWN_PATH}"
+fi
 
 declare -a header_arr # 标题数组
 declare -a keyword_arr # 关键字数组
@@ -48,15 +53,19 @@ get_params $*
 final_expr=""
 IFS=":";for i in ${MARKDOWN_PATH}
 do
-    final_expr="${final_expr} find \"${i}\" -type f -iname '*.md';"
+    final_expr="${final_expr} find \"${i}\" -type f -iname '*.md' -print0;"
 done
 unset IFS
 final_expr="{${final_expr}}"
 #final_expr="{${final_expr}} | xargs -I'{}' stat -f'%m %N' '{}' | sort -rn | cut -d' ' -f 2-"  # | xargs -I'{}' grep -l tomcat '{}"
 
-# echo "${final_expr}"
-# echo "header_arr:${header_arr} -- keyword_arr:${keyword_arr} -- next_input:${next_input} -- last_input:${last_input} -- end_char:${end_char}"
+if [ "$debug" = true ]; then
+    echo "60--${final_expr}"
+    echo "header_arr:[${header_arr}] -- keyword_arr:[${keyword_arr}] -- next_input:[${next_input}] -- last_input:[${last_input}] -- end_char:[${end_char}]"
+fi
 
+# 按时间排序
+final_expr="${final_expr} | xargs -0 ls -t"
 
 # 如果有输入-h参数，过滤文档标题
 # 思路: grep -n 会输出行号，找到符合所有关键字的行，筛选行号=1的文档就可以了
@@ -70,9 +79,9 @@ if [ ${#header_arr[@]} -gt 0 ];then
     final_expr="${final_expr} | egrep '^.+\.md\:[1-9]\:' | awk -F':' '{print \$1}'"
 fi
 
-# echo "${final_expr}"
-# ➜ { find "/demo" -type f -iname '*.md';} | xargs -I'{}' grep -inHe 'aaa' '{}' | egrep '^.+\.md\:[1-9]\:' | awk -F':' '{print $1}'
-
+if [ "$debug" = true ]; then
+    echo "78--${final_expr}"
+fi
 
 # 如果有输入关键字，则用关键字筛选文档，并且按照文档标题匹配度排序
 if [ ${#keyword_arr[@]} -gt 0 ];then
@@ -81,11 +90,13 @@ if [ ${#keyword_arr[@]} -gt 0 ];then
         final_expr="${final_expr} | xargs -I'{}' grep -ile '${i}' '{}' | awk -F':' '{print \$1}' | uniq "
     done
 
-    # echo "83--${final_expr}"
+    if [ "$debug" = true ]; then
+        echo "89--${final_expr}"
+    fi
 
     # 按时间排序
     # final_expr="${final_expr} | xargs -I'{}' stat -f'%m %N' '{}' | sort -rn | cut -d' ' -f 2- "
-    final_expr="${final_expr} | xargs -I'{}' ls -t '{}'"
+    # final_expr="${final_expr} | xargs -I'{}' ls -t '{}'"
 
     # 排序表达式: 统计第一行匹配关键字个数，将匹配个数大的放在前面
     # 第一步: 输入"文件名",输出"文件名 匹配个数"
@@ -95,32 +106,46 @@ if [ ${#keyword_arr[@]} -gt 0 ];then
     egrep_expr=$(echo "${keyword_arr[@]}" | sed "s/[[:blank:]]/|/g")
     sort_expr="awk -F'\\n' '{system(\"egrep -ioe \\\"${egrep_expr}\\\" <<< \`head -1 \\\"\"\$1 \"\\\"\` | wc -l | xargs -I\\\"{}\\\" echo \\\"{}\\\" \\\"\"\$1\"\\\"\")}' | sort -r | cut -d' ' -f 2-"
     final_expr="${final_expr} | ${sort_expr} "
+
+    if [ "$debug" = true ]; then
+        echo "106--${final_expr}"
+    fi
 else
     # 按时间排序
     # final_expr="${final_expr} | xargs -I'{}' stat -f'%m %N' '{}' | sort -rn | cut -d' ' -f 2- "
-    final_expr="${final_expr} | xargs -I'{}' ls -t '{}'"
+    # final_expr="${final_expr} | xargs -0 ls -t"
+
+    if [ "$debug" = true ]; then
+        echo "114--${final_expr}"
+    fi
 fi
 
 final_expr="${final_expr} | head -20" # 取前20个
 
+if [ "$debug" = true ]; then
+    echo "121--${final_expr}"
+fi
 
-# echo "104--${final_expr}"
-
-
-echo "{\"items\":["
+result="{\"items\":["
 n=0
+r=0
 while read line
 do
 #    echo line=${line}
 
-    # 将文件中的前两行作为结果列表中的标题显示
-    # h="$(head -2 "${line}"| sed 's/-//g;s/\\/\\\\/g;s/"/\\"/g;s/[[:space:]]*$//g')"
     # 将文件名作为结果列表中的标题显示
     h="${line##*/}"
-    echo "{\"type\": \"file\",\"title\": \"${h}\",\"subtitle\": \"${line}\",\"arg\": \"${line}\"},"
+    result+="{\"type\": \"file\",\"title\": \"${h}\",\"subtitle\": \"${line}\",\"arg\": \"${line}\"},"
     n=$((n+1))
 done < <(eval "${final_expr}")
 if [ ${n} -eq 0 ]; then
-    echo "{\"title\": \"没有找到符合条件的文档\"}"
+    result+="{\"title\": \"没有找到符合条件的文档\"}"
 fi
-echo "]}"
+
+# Remove the json str last comma
+if [ ${r} -eq 0 ]; then
+    result=${result%,}
+fi
+
+result+="]}"
+echo ${result}

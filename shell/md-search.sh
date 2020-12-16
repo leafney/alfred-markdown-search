@@ -92,18 +92,26 @@ fi
 final_expr="${final_expr} | head -20" # 取前20个
 
 
-echo "{\"items\":["
+result="{\"items\":["
 n=0
+r=0
 while read line
 do
 #    echo line=${line}
 
     # 将文件名作为结果列表中的标题显示
     h="${line##*/}"
-    echo "{\"type\": \"file\",\"title\": \"${h}\",\"subtitle\": \"${line}\",\"arg\": \"${line}\"},"
+    result+="{\"type\": \"file\",\"title\": \"${h}\",\"subtitle\": \"${line}\",\"arg\": \"${line}\"},"
     n=$((n+1))
 done < <(eval "${final_expr}")
 if [ ${n} -eq 0 ]; then
-    echo "{\"title\": \"没有找到符合条件的文档\"}"
+    result+="{\"title\": \"没有找到符合条件的文档\"}"
 fi
-echo "]}"
+
+# Remove the json str last comma
+if [ ${r} -eq 0 ]; then
+    result=${result%,}
+fi
+
+result+="]}"
+echo ${result}
