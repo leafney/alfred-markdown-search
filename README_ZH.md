@@ -4,7 +4,7 @@
 
 ## 文档
 
-* [英文文档](REAMDME.md)
+* [English document](REAMDME.md)
 * [中文文档](README_ZH.md)
 
 
@@ -17,7 +17,7 @@
 
 打开 `Markdown Search workflow` 的环境变量设置页面，配置如下环境变量：
 
-* `MARKDOWN_PATH` -- `必填项` -- markdown文档所在目录路径
+* `MARKDOWN_PATH` -- `必填项` -- markdown文档所在目录路径，多个目录用英文冒号`:`分隔
 * `MARKDOWN_APP` -- `可选项` -- 第三方App, 例如 `/Applications/Typora.app`
 
 ## 如何使用

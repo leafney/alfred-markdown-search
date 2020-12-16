@@ -5,7 +5,7 @@ Alfred Workflow for search and open Markdown files
 ## Documents
 
 * [English document](REAMDME.md)
-* [Chinese document](README_ZH.md)
+* [中文文档](README_ZH.md)
 
 
 ## Pain Point
@@ -17,7 +17,7 @@ When using Typora to manage markdown documents, the built-in search function is 
 
 Open the environment variable setting page of `Markdown Search workflow`, and configure:
 
-* `MARKDOWN_PATH` -- `Required` -- Directory path of markdown files
+* `MARKDOWN_PATH` -- `Required` -- Directory path of markdown files,multiple directories are separated by English colon `:`
 * `MARKDOWN_APP` -- `Optional` -- Third-party apps, such as `/Applications/Typora.app`
 
 ## How to use
