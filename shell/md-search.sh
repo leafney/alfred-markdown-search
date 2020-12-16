@@ -46,11 +46,13 @@ get_params $*
 final_expr=""
 IFS=":";for i in ${MARKDOWN_PATH}
 do
-    final_expr="${final_expr} find \"${i}\" -type f -iname '*.md';"
+    final_expr="${final_expr} find \"${i}\" -type f -iname '*.md' -print0;"
 done
 unset IFS
 final_expr="{${final_expr}}"
 
+# 按时间排序
+final_expr="${final_expr} | xargs -0 ls -t"
 
 # 如果有输入-h参数，过滤文档标题
 # 思路: grep -n 会输出行号，找到符合所有关键字的行，筛选行号=1的文档就可以了
@@ -73,7 +75,7 @@ if [ ${#keyword_arr[@]} -gt 0 ];then
 
     # 按时间排序
     # final_expr="${final_expr} | xargs -I'{}' stat -f'%m %N' '{}' | sort -rn | cut -d' ' -f 2- "
-    final_expr="${final_expr} | xargs -I'{}' ls -t '{}'"
+    # final_expr="${final_expr} | xargs -I'{}' ls -t '{}'"
 
     # 排序表达式: 统计第一行匹配关键字个数，将匹配个数大的放在前面
     # 第一步: 输入"文件名",输出"文件名 匹配个数"
@@ -83,10 +85,6 @@ if [ ${#keyword_arr[@]} -gt 0 ];then
     egrep_expr=$(echo "${keyword_arr[@]}" | sed "s/[[:blank:]]/|/g")
     sort_expr="awk -F'\\n' '{system(\"egrep -ioe \\\"${egrep_expr}\\\" <<< \`head -1 \\\"\"\$1 \"\\\"\` | wc -l | xargs -I\\\"{}\\\" echo \\\"{}\\\" \\\"\"\$1\"\\\"\")}' | sort -r | cut -d' ' -f 2-"
     final_expr="${final_expr} | ${sort_expr} "
-else
-    # 按时间排序
-    # final_expr="${final_expr} | xargs -I'{}' stat -f'%m %N' '{}' | sort -rn | cut -d' ' -f 2- "
-    final_expr="${final_expr} | xargs -I'{}' ls -t '{}'"
 fi
 
 final_expr="${final_expr} | head -20" # 取前20个
@@ -97,8 +95,6 @@ n=0
 r=0
 while read line
 do
-#    echo line=${line}
-
     # 将文件名作为结果列表中的标题显示
     h="${line##*/}"
     result+="{\"type\": \"file\",\"title\": \"${h}\",\"subtitle\": \"${line}\",\"arg\": \"${line}\"},"
